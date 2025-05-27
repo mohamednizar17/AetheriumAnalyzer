@@ -1,4 +1,4 @@
-# TaleGlow Rater
+# AetheriumAnalyzer
 
 ## Overview
 **TaleGlow Rater** is a user-friendly AI-powered web tool designed to help writers improve their scripts. Paste or upload a script, and the tool scores it from 0 to 100, offering tailored suggestions to enhance plot, characters, dialogue, pacing, and more. With an interactive chatbot and a sleek, futuristic interface, it’s perfect for screenwriters and storytellers looking to polish their work.
