@@ -1,0 +1,10 @@
+# TaleGlow Rater Requirements
+#
+# This project is a standalone HTML webpage with embedded CSS and JavaScript.
+# No server-side or external dependencies are required to run the application.
+#
+# Requirements:
+# - A modern web browser (e.g., Chrome, Firefox, Edge) with JavaScript enabled.
+# - Internet access to load Google Fonts (Orbitron and Rajdhani) via CDN.
+#
+# No packages need to be installed via pip or other package managers.
