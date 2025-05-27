@@ -1,0 +1,894 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aetherium Script Analyzer</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Rajdhani:wght@400;600&display=swap');
+
+        :root {
+            --primary-color: #0d0d2b;
+            --secondary-color: #1a1a40;
+            --accent-color-1: #00f7ff; /* Cyan */
+            --accent-color-2: #e000ff; /* Magenta */
+            --text-color: #e0e0e0;
+            --glow-shadow: 0 0 5px var(--accent-color-1), 0 0 10px var(--accent-color-1), 0 0 20px var(--accent-color-1);
+            --glow-shadow-2: 0 0 5px var(--accent-color-2), 0 0 10px var(--accent-color-2), 0 0 20px var(--accent-color-2);
+        }
+
+        body {
+            font-family: 'Rajdhani', sans-serif;
+            background-color: var(--primary-color);
+            color: var(--text-color);
+            margin: 1rem;
+            padding: 0;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            background-image: radial-gradient(circle, var(--secondary-color) 0%, var(--primary-color) 70%);
+        }
+
+        .container {
+            width: 90%;
+            max-width: 1400px;
+            min-height: 90vh;
+            background-color: rgba(13, 13, 43, 0.8);
+            border-radius: 20px;
+            border: 2px solid var(--accent-color-1);
+            box-shadow: var(--glow-shadow);
+            backdrop-filter: blur(10px);
+            padding: 2rem;
+            box-sizing: border-box;
+            opacity: 0;
+            transform: scale(0.9);
+            animation: fadeIn 1s forwards;
+            display: grid;
+            grid-template-rows: auto 1fr 200px;
+            gap: 1.5rem;
+        }
+
+        @keyframes fadeIn {
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        header {
+            text-align: center;
+            padding-bottom: 1rem;
+        }
+        
+        header h2 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 2.5rem;
+            margin: 0;
+            color: var(--accent-color-1);
+            text-shadow: var(--glow-shadow);
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+            height: 100%;
+        }
+
+        .input-section {
+            display: flex;
+            flex-direction: column;
+            padding: 1rem;
+        }
+
+        .input-section h3 {
+            border-bottom: 2px solid var(--accent-color-2);
+            padding-bottom: 0.5rem;
+            margin-top: 0;
+        }
+        
+        #script-input {
+            width: 100%;
+            height: 100%;
+            max-height: 100%;
+            background-color: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--accent-color-1);
+            border-radius: 10px;
+            color: var(--text-color);
+            padding: 1rem;
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 1rem;
+            resize: none;
+            box-sizing: border-box;
+            overflow-y: auto;
+        }
+
+        #script-input:focus {
+            outline: none;
+            box-shadow: var(--glow-shadow);
+        }
+
+        .button-group {
+            margin-top: 1rem;
+            display: flex;
+            gap: 1rem;
+        }
+
+        .action-btn {
+            width: 100%;
+            padding: 0.8rem;
+            border-radius: 5px;
+            cursor: pointer;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        #upload-btn {
+            background-color: transparent;
+            border: 2px solid var(--accent-color-1);
+            color: var(--accent-color-1);
+        }
+
+        #upload-btn:hover {
+            background-color: var(--accent-color-1);
+            color: var(--primary-color);
+            box-shadow: var(--glow-shadow);
+        }
+
+        #analyze-btn {
+            background: linear-gradient(45deg, var(--accent-color-1), var(--accent-color-2));
+            color: var(--primary-color);
+            border: none;
+            box-shadow: 0 0 10px var(--accent-color-2);
+        }
+
+        #analyze-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 20px var(--accent-color-2);
+        }
+
+        .results-section {
+            background-color: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            padding: 1rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            border: 1px solid var(--accent-color-2);
+            overflow-y: auto;
+            max-height: 100%;
+        }
+
+        #results-placeholder {
+            font-size: 1.2rem;
+            color: var(--accent-color-2);
+            text-shadow: var(--glow-shadow-2);
+        }
+
+        #analysis-results {
+            display: none;
+            width: 100%;
+        }
+
+        .rating-circle {
+            position: relative;
+            width: 150px;
+            height: 150px;
+            margin: 0 auto 1rem;
+        }
+        
+        .rating-circle svg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            transform: rotate(-90deg);
+        }
+        
+        .rating-circle circle {
+            fill: none;
+            stroke-width: 10;
+        }
+
+        .rating-bg {
+            stroke: rgba(255, 255, 255, 0.2);
+        }
+
+        .rating-fg {
+            stroke: linear;
+            stroke-linecap: round;
+            transition: stroke-dashoffset 2s ease-out;
+        }
+
+        .rating-text {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 2.5rem;
+            color: var(--accent-color-1);
+            text-shadow: var(--glow-shadow);
+        }
+
+        #suggestions {
+            text-align: left;
+            margin-top: 1.5rem;
+            max-height: 200px;
+            overflow-y: auto;
+            padding-right: 10px;
+        }
+
+        #suggestions h4 {
+            color: var(--accent-color-2);
+            border-bottom: 1px solid var(--accent-color-2);
+            padding-bottom: 5px;
+        }
+
+        #suggestions ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        #suggestions li {
+            margin-bottom: 1rem;
+            line-height: 1.4;
+            opacity: 0;
+            animation: suggestionFadeIn 0.5s forwards;
+        }
+        
+        @keyframes suggestionFadeIn {
+            to {
+                opacity: 1;
+            }
+        }
+        
+        .chat-section {
+            background-color: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            padding: 1.2rem;
+            display: flex;
+            flex-direction: column;
+            border: 1px solid var(--accent-color-1);
+            height: 100%;
+        }
+
+        .chat-section h3 {
+            border-bottom: 2px solid var(--accent-color);
+            padding-bottom: 0.5rem;
+            margin: 0 0 0.5rem 0;
+            color: var(--accent-color-1);
+        }
+
+        #chat-messages {
+            flex-grow: 1;
+            height: 100px;
+            overflow-y: auto;
+            padding: 10px;
+            border: 5px solid rgba(0,0,0,0);
+            border-radius: 1px;
+            margin-bottom: 0.5rem;
+            background-color: rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+            box-sizing: border-box;
+        }
+
+        .chat-message {
+            margin-bottom: 0.8rem;
+            padding: 0.5rem 0.8rem;
+            border-radius: 10px;
+            max-width: 80%;
+            line-height: 1.4;
+        }
+
+        .user-message {
+            background-color: var(--accent-color-2);
+            color: var(--primary-color);
+            align-self: flex-end;
+            margin-left: auto;
+        }
+
+        .ai-message {
+            background-color: var(--accent-color-1);
+            color: var(--primary-color);
+            align-self: flex-start;
+            margin-right: auto;
+        }
+
+        .chat-input-group {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        #chat-input {
+            flex-grow: 1;
+            padding: 0.7rem;
+            border-radius: 5px;
+            border: 1px solid var(--accent-color-1);
+            background-color: rgba(255, 255, 255, 0.05);
+            color: var(--text-color);
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 1rem;
+        }
+
+        #chat-input:focus {
+            outline: none;
+            box-shadow: var(--glow-shadow);
+        }
+
+        #send-chat-btn {
+            background: linear-gradient(45deg, var(--accent-color-1), var(--accent-color-2));
+            color: var(--primary-color);
+            border: none;
+            padding: 0.7rem 1.2rem;
+            border-radius: 5px;
+            cursor: pointer;
+            font-family: 'Orbitron', sans-serif;
+            transition: all 0.3s ease;
+        }
+
+        #send-chat-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 10px var(--accent-color-2);
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: var(--secondary-color);
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: var(--accent-color-2);
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--accent-color-1);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h2>Aetherium Analyzer</h2>
+        </header>
+        
+        <div class="main-content">
+            <div class="input-section">
+                <h3>Your Script</h3>
+                <textarea id="script-input" placeholder="Paste your script here or upload a .txt, .xls, or .xlsx file..."></textarea>
+                <div class="button-group">
+                    <button class="action-btn" id="upload-btn">Upload Script</button>
+                    <input type="file" id="file-input" accept=".txt,.xls,.xlsx" style="display: none;">
+                    <button class="action-btn" id="analyze-btn">Analyze Script</button>
+                </div>
+            </div>
+
+            <div class="results-section">
+                <div id="results-placeholder">
+                    <p>Awaiting Script for AI Analysis...</p>
+                </div>
+                <div id="analysis-results">
+                    <div class="rating-circle">
+                        <svg>
+                            <defs>
+                                <linearGradient id="rating-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                                    <stop offset="0%" style="stop-color:var(--accent-color-2);stop-opacity:1" />
+                                    <stop offset="100%" style="stop-color:var(--accent-color-1);stop-opacity:1" />
+                                </linearGradient>
+                            </defs>
+                            <circle class="rating-bg" cx="75" cy="75" r="65"></circle>
+                            <circle class="rating-fg" id="rating-progress" cx="75" cy="75" r="65" stroke-dasharray="408.4" stroke-dashoffset="408.4"></circle>
+                        </svg>
+                        <div class="rating-text" id="rating-value">0</div>
+                    </div>
+                    <div id="suggestions">
+                        <h4>AI Suggestions:</h4>
+                        <ul id="suggestions-list"></ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="chat-section">
+            <h3>Aetherium Assistant</h3>
+            <div id="chat-messages">
+                <div class="chat-message ai-message">Hello! I'm your Aetherium Assistant. I can analyze your script, provide detailed feedback, or answer questions about writing. Ready to get started?</div>
+            </div>
+            <div class="chat-input-group">
+                <input type="text" id="chat-input" placeholder="Type your message...">
+                <button id="send-chat-btn">Send</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // DOM Elements
+        const scriptInput = document.getElementById('script-input');
+        const uploadBtn = document.getElementById('upload-btn');
+        const fileInput = document.getElementById('file-input');
+        const analyzeBtn = document.getElementById('analyze-btn');
+        const resultsPlaceholder = document.getElementById('results-placeholder');
+        const analysisResults = document.getElementById('analysis-results');
+        const ratingProgress = document.getElementById('rating-progress');
+        const ratingValue = document.getElementById('rating-value');
+        const suggestionsList = document.getElementById('suggestions-list');
+        const chatMessages = document.getElementById('chat-messages');
+        const chatInput = document.getElementById('chat-input');
+        const sendChatBtn = document.getElementById('send-chat-btn');
+
+        // State
+        let lastAnalyzedScore = 0;
+        let lastAnalyzedSuggestions = [];
+        let hasScriptBeenAnalyzed = false;
+        let conversationHistory = [];
+
+        // Utility: Sanitize strings to prevent template literal issues
+        function sanitizeString(str) {
+            return str.replace(/[`'"]/g, '\\$&');
+        }
+
+        // Utility: Format suggestions as numbered list
+        function formatSuggestions(suggestions, limit = suggestions.length) {
+            return suggestions
+                .slice(0, limit)
+                .map((s, i) => `${i + 1}. ${sanitizeString(s)}`)
+                .join('\n');
+        }
+
+        // File Upload Logic
+        uploadBtn.addEventListener('click', () => fileInput.click());
+        fileInput.addEventListener('change', (event) => {
+            const file = event.target.files[0];
+            if (!file) return;
+            if (file.type === 'text/plain') {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    scriptInput.value = e.target.result;
+                    alert('Script is uploaded');
+                };
+                reader.onerror = () => {
+                    alert('Error reading file. Please try again.');
+                };
+                reader.readAsText(file);
+                fileInput.value = ''; // Reset input for multiple uploads
+            } else if (file.type === 'application/vnd.ms-excel' || file.type === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet') {
+                alert('Excel files require a library like SheetJS for processing. Please paste text or use a .txt file.');
+                fileInput.value = '';
+            } else {
+                alert('Please upload a valid .txt, .xls, or .xlsx file.');
+                fileInput.value = '';
+            }
+        });
+
+        // Analysis Logic
+        analyzeBtn.addEventListener('click', () => {
+            const scriptText = scriptInput.value.trim();
+            if (!scriptText) {
+                alert('Please provide a script to analyze.');
+                return;
+            }
+
+            resultsPlaceholder.style.display = 'none';
+            analysisResults.style.display = 'block';
+            ratingValue.textContent = '...';
+            suggestionsList.innerHTML = '<li>Analyzing script...</li>';
+
+            setTimeout(() => {
+                const aiResult = getAiRating(scriptText);
+                displayResults(aiResult);
+                lastAnalyzedScore = aiResult.score;
+                lastAnalyzedSuggestions = aiResult.suggestions || [];
+                hasScriptBeenAnalyzed = true;
+            }, 2000);
+        });
+
+        function getAiRating(script) {
+            if (!script || !script.trim()) {
+                return { score: 0, suggestions: ['No script provided. Please paste or upload a valid script.'] };
+            }
+
+            const words = script.toLowerCase().split(/\s+/).filter(word => word.length);
+            const sentences = script.split(/[.!?]\s*/).filter(s => s.trim());
+            const paragraphs = script.split(/\n\s*\n/).filter(p => p.trim());
+            const wordCount = words.length;
+            const sentenceCount = sentences.length;
+            const paragraphCount = paragraphs.length;
+
+            let score = 0;
+            const suggestions = [];
+
+            const hasKeyword = keywords => keywords.some(keyword => script.toLowerCase().includes(keyword));
+            const countKeywords = keywords => keywords.reduce((count, keyword) => count + (script.toLowerCase().match(new RegExp(`\\b${keyword}\\b`, 'g')) || []).length, 0);
+
+            // Script Length (20%)
+            if (wordCount < 100) {
+                score += 2;
+                suggestions.push('The script is extremely short. Add more scenes, character development, or descriptive action.');
+            } else if (wordCount < 400) {
+                score += 8;
+                suggestions.push('The script is concise. Expand on character arcs, subplots, or settings.');
+            } else if (wordCount <= 6000) {
+                score += 16;
+                suggestions.push('The script length is ideal. Ensure pacing remains consistent.');
+            } else {
+                score += 10;
+                suggestions.push('The script is lengthy. Review for pacing issues or redundant scenes.');
+            }
+
+            // Dialogue vs. Action (20%)
+            const dialogueIndicators = ['dialogue', 'says', 'speaks', 'said', 'asks', 'replies', 'shouts', 'whispers'];
+            const actionIndicators = ['action', 'scene', 'moves', 'looks', 'walks', 'enters', 'exits', 'runs'];
+            const dialogueWordCount = countKeywords(dialogueIndicators);
+            const actionWordCount = countKeywords(actionIndicators);
+            const totalIndicatorCount = dialogueWordCount + actionWordCount;
+
+            if (!totalIndicatorCount) {
+                score += 2;
+                suggestions.push('No clear dialogue or action indicators. Include both for a dynamic narrative.');
+            } else {
+                const dialogueRatio = dialogueWordCount / totalIndicatorCount;
+                if (dialogueRatio > 0.75) {
+                    score += 8;
+                    suggestions.push('The script is dialogue-heavy. Add more action and visual storytelling.');
+                } else if (dialogueRatio < 0.25) {
+                    score += 8;
+                    suggestions.push('The script is action-heavy. Incorporate more dialogue to advance the plot.');
+                } else {
+                    score += 16;
+                    suggestions.push('Great balance between dialogue and action.');
+                }
+            }
+
+            // Narrative Structure (15%)
+            const structuralKeywords = ['inciting incident', 'plot point', 'midpoint', 'climax', 'resolution', 'setup', 'payoff'];
+            const structureCount = structuralKeywords.filter(keyword => script.toLowerCase().includes(keyword)).length;
+            if (structureCount >= 4) {
+                score += 12;
+                suggestions.push('Strong narrative structure. Ensure beats are impactful.');
+            } else if (structureCount >= 2) {
+                score += 8;
+                suggestions.push('Some structural elements present. Define key moments clearly.');
+            } else {
+                score += 4;
+                suggestions.push('Weak narrative structure. Include clear inciting incidents and resolutions.');
+            }
+
+            // Character Development (15%)
+            const characterDevKeywords = ['motivation', 'arc', 'conflict', 'flaw', 'growth', 'transformation', 'goal', 'want', 'need'];
+            const charDevCount = countKeywords(characterDevKeywords);
+            if (charDevCount > 5) {
+                score += 12;
+                suggestions.push('Excellent character development. Deepen arcs for impact.');
+            } else if (charDevCount > 0) {
+                score += 8;
+                suggestions.push('Some character development. Explore motivations further.');
+            } else {
+                score += 4;
+                suggestions.push('Minimal character development. Define goals and flaws.');
+            }
+
+            // Pacing and Tension (10%)
+            const pacingKeywords = ['tension', 'suspense', 'build-up', 'reveal', 'quickens', 'pause', 'beat'];
+            const pacingCount = countKeywords(pacingKeywords);
+            if (pacingCount > 3) {
+                score += 8;
+                suggestions.push('Good pacing. Maintain varied rhythm.');
+            } else if (pacingCount > 0) {
+                score += 5;
+                suggestions.push('Pacing present but limited. Build tension.');
+            } else {
+                score += 2;
+                suggestions.push('Pacing needs work. Add suspense to enhance flow.');
+            }
+
+            // Conflict and Resolution (10%)
+            const conflictKeywords = ['conflict', 'struggle', 'obstacle', 'antagonist', 'dilemma', 'crisis'];
+            const resolutionKeywords = ['resolution', 'solution', 'overcome', 'triumph', 'resolve'];
+            const hasConflict = hasKeyword(conflictKeywords);
+            const hasResolution = hasKeyword(resolutionKeywords);
+            if (hasConflict && hasResolution) {
+                score += 8;
+                suggestions.push('Conflict and resolution present. Ensure they’re compelling.');
+            } else if (hasConflict) {
+                score += 5;
+                suggestions.push('Conflict detected. Add a clear resolution.');
+            } else if (hasResolution) {
+                score += 3;
+                suggestions.push('Resolution present. Introduce stronger conflicts.');
+            } else {
+                score += 2;
+                suggestions.push('Add clear conflicts and resolutions.');
+            }
+
+            // Readability (10%)
+            const avgSentenceLength = sentenceCount > 0 ? wordCount / sentenceCount : 0;
+            let readabilityScore = 0;
+            if (avgSentenceLength > 25) {
+                readabilityScore = 4;
+                suggestions.push('Long sentences may hinder readability. Break them down.');
+            } else if (avgSentenceLength < 8) {
+                readabilityScore = 6;
+                suggestions.push('Short sentences are great but may lack depth. Add variety.');
+            } else {
+                readabilityScore = 8;
+                suggestions.push('Sentence length supports readability.');
+            }
+
+            if (paragraphCount < 5 && wordCount > 500) {
+                readabilityScore -= 2;
+                suggestions.push('Few paragraphs for a long script. Break text into smaller blocks.');
+            }
+            score += readabilityScore;
+
+            // Keyword Diversity (5%)
+            const uniqueWords = new Set(words).size;
+            const diversityRatio = wordCount > 0 ? uniqueWords / wordCount : 0;
+            if (diversityRatio > 0.5) {
+                score += 4;
+                suggestions.push('Good vocabulary diversity.');
+            } else {
+                score += 2;
+                suggestions.push('Limited vocabulary diversity. Use varied words.');
+            }
+
+            // Normalize score
+            score = Math.max(0, Math.min(100, Math.round(score)));
+
+            // Tailored suggestions
+            if (score >= 90) suggestions.push('Outstanding script! Polish minor details.');
+            else if (score >= 70) suggestions.push('Solid script. Refine weaker areas.');
+            else if (score >= 50) suggestions.push('Good foundation. Address key issues.');
+            else suggestions.push('Significant revisions needed. Focus on core elements.');
+
+            if (!suggestions.some(s => s.includes('feedback'))) {
+                suggestions.push('Seek external feedback from writers’ groups.');
+            }
+
+            return { score, suggestions };
+        }
+
+        function displayResults({ score, suggestions }) {
+            let currentRating = 0;
+            const targetScore = score;
+            ratingValue.textContent = '0';
+
+            const ratingInterval = setInterval(() => {
+                if (currentRating >= targetScore) {
+                    ratingValue.textContent = targetScore;
+                    clearInterval(ratingInterval);
+                } else {
+                    currentRating++;
+                    ratingValue.textContent = currentRating;
+                }
+            }, 20);
+
+            const circumference = 2 * Math.PI * 65;
+            const offset = circumference - (targetScore / 100) * circumference;
+            ratingProgress.style.strokeDashoffset = offset;
+
+            suggestionsList.innerHTML = '';
+            suggestions.forEach((suggestion, index) => {
+                const li = document.createElement('li');
+                li.style.animationDelay = `${index * 0.1}s`;
+                li.innerHTML = `● ${sanitizeString(suggestion)}`;
+                suggestionsList.appendChild(li);
+            });
+        }
+
+        // Chat Logic
+        sendChatBtn.addEventListener('click', () => handleChatInput());
+        chatInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') handleChatInput();
+        });
+
+        function addMessage(message, sender) {
+            const messageDiv = document.createElement('div');
+            messageDiv.classList.add('chat-message', sender === 'user' ? 'user-message' : 'ai-message');
+            messageDiv.textContent = message;
+            chatMessages.appendChild(messageDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        function handleChatInput() {
+            const userMessage = chatInput.value.trim();
+            if (!userMessage) return;
+
+            addMessage(userMessage, 'user');
+            chatInput.value = '';
+
+            conversationHistory.push(userMessage);
+            if (conversationHistory.length > 5) conversationHistory.shift();
+
+            setTimeout(() => {
+                try {
+                    const response = generateAiResponse(userMessage.toLowerCase());
+                    addMessage(response, 'ai');
+                } catch (error) {
+                    console.error('Error generating AI response:', error);
+                    addMessage('Sorry, something went wrong. Please try again.', 'ai');
+                }
+            }, 1000);
+        }
+
+        function generateAiResponse(lowerCaseMessage) {
+            const keywords = {
+                quality: ['how is my script', 'script looks like', 'good or bad', 'how good is my script', 'script quality', 'is my script good', 'is it good', 'script performance', 'rate my script'],
+                improvements: ['improve', 'make it better', 'enhance', 'changes', 'make it engaging', 'better script', 'improve my script', 'fix my script', 'make it stronger', 'polish script'],
+                specificAspects: {
+                    plot: ['plot', 'story arc', 'narrative', 'storyline', 'story structure'],
+                    character: ['character', 'characters', 'protagonist', 'antagonist', 'character development'],
+                    dialogue: ['dialogue', 'conversations', 'dialog', 'character lines', 'speech'],
+                    pacing: ['pacing', 'speed', 'flow', 'rhythm', 'tempo'],
+                    format: ['format', 'screenplay format', 'script format', 'layout', 'script style'],
+                    conflict: ['conflict', 'tension', 'stakes', 'struggle', 'obstacle'],
+                    resolution: ['resolution', 'ending', 'climax', 'conclusion', 'finale'],
+                    theme: ['theme', 'message', 'meaning', 'moral', 'underlying idea'],
+                    genre: ['genre', 'type of story', 'style', 'category', 'tone'],
+                    feedback: ['feedback', 'critique', 'review', 'comments', 'suggestions'],
+                    rewrite: ['rewrite', 'revisions', 'edit', 'redraft', 'revise'],
+                    logline: ['logline', 'synopsis', 'pitch', 'summary', 'one-liner']
+                },
+                greetings: ['hello', 'hi', 'hey', 'greetings', 'yo'],
+                thanks: ['thank you', 'thanks', 'appreciate it', 'thx', 'grateful'],
+                goodbye: ['bye', 'goodbye', 'see you', 'later', 'farewell'],
+                nextSteps: ['what next', 'how to proceed', 'next steps', 'what should i do', 'now what'],
+                elaboration: ['elaborate', 'more detail', 'explain more', 'tell me more', 'go deeper'],
+                analysis: ['analysis', 'results', 'score', 'rating', 'what did you find', 'my score']
+            };
+
+            if (keywords.greetings.some(k => lowerCaseMessage.includes(k))) {
+                return `Hi! I'm ready to assist. Analyze a new script, review the last one (score: ${hasScriptBeenAnalyzed ? lastAnalyzedScore : 'none yet'}), or ask for writing tips!`;
+            }
+            if (keywords.thanks.some(k => lowerCaseMessage.includes(k))) {
+                return "You're welcome! What's next—more script feedback or a specific writing topic?";
+            }
+            if (keywords.goodbye.some(k => lowerCaseMessage.includes(k))) {
+                return "See you soon! Keep writing, and I'll be here for feedback!";
+            }
+            if (keywords.quality.some(k => lowerCaseMessage.includes(k))) {
+                return handleQualityResponse();
+            }
+            if (keywords.improvements.some(k => lowerCaseMessage.includes(k))) {
+                return handleImprovementsResponse();
+            }
+            if (keywords.analysis.some(k => lowerCaseMessage.includes(k))) {
+                return handleAnalysisResponse();
+            }
+            if (keywords.elaboration.some(k => lowerCaseMessage.includes(k))) {
+                return handleElaborationResponse(lowerCaseMessage);
+            }
+            if (keywords.nextSteps.some(k => lowerCaseMessage.includes(k))) {
+                return handleNextStepsResponse();
+            }
+
+            // Handle specific aspects
+            for (const aspect in keywords.specificAspects) {
+                if (keywords.specificAspects[aspect].some(k => lowerCaseMessage.includes(k))) {
+                    return handleAspectResponse(aspect);
+                }
+            }
+
+            // Fallback
+            return handleFallbackResponse();
+        }
+
+        function handleQualityResponse() {
+            if (!hasScriptBeenAnalyzed) {
+                return "I haven’t analyzed your script yet. Paste it, click 'Analyze Script,' and I’ll provide a rating and tips!";
+            }
+            let qualityAssessment;
+            if (lastAnalyzedScore >= 90) {
+                qualityAssessment = `Wow, your script is excellent, scoring ${lastAnalyzedScore}/100! It’s captivating.`;
+            } else if (lastAnalyzedScore >= 70) {
+                qualityAssessment = `Your script is solid, scoring ${lastAnalyzedScore}/100. It’s engaging with room to grow.`;
+            } else if (lastAnalyzedScore >= 50) {
+                qualityAssessment = `Your script scored ${lastAnalyzedScore}/100, a good start. It needs work to shine.`;
+            } else {
+                qualityAssessment = `Your script scored ${lastAnalyzedScore}/100. It’s a chance to refine your story!`;
+            }
+            return `${qualityAssessment}\n\nTo improve, try:\n${formatSuggestions(lastAnalyzedSuggestions, 2)}\n\nFocus on one area or ask about specifics, like pacing?`;
+        }
+
+        function handleImprovementsResponse() {
+            if (!hasScriptBeenAnalyzed) {
+                return "Please analyze your script first. Paste it and click 'Analyze Script' for improvement tips!";
+            }
+            const engagingTips = lastAnalyzedSuggestions.some(s => s.toLowerCase().includes('pacing') || s.toLowerCase().includes('conflict'))
+                ? 'Boost engagement by tightening pacing and heightening conflict.'
+                : 'Ensure each scene drives the story or deepens characters.';
+            return `${engagingTips}\n\nKey improvements:\n${formatSuggestions(lastAnalyzedSuggestions, 3)}\n\nWhich to tackle first, or explore another aspect?`;
+        }
+
+        function handleAnalysisResponse() {
+            if (!hasScriptBeenAnalyzed) {
+                return "No analysis yet! Paste your script and click 'Analyze Script' to see results.";
+            }
+            return `Your script scored ${lastAnalyzedScore}/100.\n\nKey findings:\n${formatSuggestions(lastAnalyzedSuggestions, 3)}\n\nSee the suggestions panel for more. Discuss a point in detail?`;
+        }
+
+        function handleElaborationResponse(lowerCaseMessage) {
+            if (conversationHistory.length <= 1) {
+                return 'I need more context. Ask about a specific topic, like "plot" or "dialogue," or refer to the analysis.';
+            }
+            const previousMessage = conversationHistory[conversationHistory.length - 2].toLowerCase();
+            let matchedAspect = null;
+            for (const aspect in generateAiResponse.keywords.specificAspects) {
+                if (previousMessage.includes(aspect) || generateAiResponse.keywords.specificAspects[aspect].some(k => previousMessage.includes(k))) {
+                    matchedAspect = aspect;
+                    break;
+                }
+            }
+            if (matchedAspect && hasScriptBeenAnalyzed) {
+                const relevantSuggestions = lastAnalyzedSuggestions.filter(s => s.toLowerCase().includes(matchedAspect)).slice(0, 2);
+                if (relevantSuggestions.length) {
+                    return `Diving into ${matchedAspect}:\n${formatSuggestions(relevantSuggestions)}\n\nHow to apply these?`;
+                }
+                return `No specific ${matchedAspect} suggestions found. General advice: ${getGeneralAdvice(matchedAspect)}\n\nExplore further?`;
+            }
+            return 'Please specify what to elaborate on, e.g., "plot" or "characters."';
+        }
+
+        function handleNextStepsResponse() {
+            if (!hasScriptBeenAnalyzed) {
+                return 'First, analyze your script! Paste it and click "Analyze Script" for next steps.';
+            }
+            const suggestion = lastAnalyzedSuggestions[0] || 'refining your story’s core';
+            return `Focus on ${suggestion.toLowerCase()}. Revise with key suggestions in mind.\n\nBrainstorm how to approach this?`;
+        }
+
+        function handleAspectResponse(aspect) {
+            const generalAdvice = getGeneralAdvice(aspect);
+            let specificFeedback = '';
+            if (hasScriptBeenAnalyzed) {
+                const relevantSuggestions = lastAnalyzedSuggestions.filter(s => s.toLowerCase().includes(aspect)).slice(0, 2);
+                specificFeedback = relevantSuggestions.length
+                    ? `\n\nFrom analysis:\n${formatSuggestions(relevantSuggestions)}`
+                    : `\n\nNo specific ${aspect} suggestions. Double-check for improvements.`;
+            } else {
+                specificFeedback = `\n\nAnalyze your script for tailored ${aspect} feedback!`;
+            }
+            return `${generalAdvice}${specificFeedback}\n\nDig deeper or try a revision?`;
+        }
+
+        function handleFallbackResponse() {
+            const fallbackResponses = [
+                'Not sure what you mean. Try asking “how’s my script?” or “improve my dialogue” for feedback.',
+                'Let’s focus on your script! Ask about quality, pacing, or analyze it for insights.',
+                'Could you clarify? I can help with script analysis or tips—try “characters” or “plot.”',
+                'I’m here for writing advice! Discuss your script’s strengths or a topic like theme.'
+            ];
+            let response = fallbackResponses[Math.floor(Math.random() * fallbackResponses.length)];
+            if (hasScriptBeenAnalyzed) {
+                response += `\n\nWith your script (score: ${lastAnalyzedScore}), ask about results or topics like "dialogue."`;
+            }
+            return response;
+        }
+
+        function getGeneralAdvice(aspect) {
+            const advice = {
+                plot: 'A strong plot needs a clear inciting incident, rising action, and resolution.',
+                character: 'Define characters with motivations, flaws, and arcs.',
+                dialogue: 'Dialogue should reveal character and advance plot with subtext.',
+                pacing: 'Vary scene length and use tension for engaging rhythm.',
+                format: 'Use standard screenplay format for professionalism.',
+                conflict: 'Conflict drives drama—ensure clear stakes and obstacles.',
+                resolution: 'Climax and resolution should feel earned and provide closure.',
+                theme: 'Weave theme subtly through character arcs and conflicts.',
+                genre: 'Know genre conventions to meet expectations with a unique voice.',
+                feedback: 'Share your script with writers’ groups for diverse perspectives.',
+                rewrite: 'Cut unnecessary scenes and refine dialogue in revisions.',
+                logline: 'A logline summarizes protagonist, goal, obstacle, and stakes.'
+            };
+            return advice[aspect] || 'Please specify a topic to refine.';
+        }
+    </script>
+</body>
+</html>
